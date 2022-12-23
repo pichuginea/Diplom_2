@@ -24,7 +24,6 @@ public class AuthRegisterTests {
 	private String name;
 	private String authToken = null;
 
-
 	@Before
 	public void setUp() {
 		RestAssured.baseURI = "https://stellarburgers.nomoreparties.site";

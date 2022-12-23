@@ -47,7 +47,7 @@ public class AuthUserTests {
 
 	@Test
 	@DisplayName("User getting")
-	@Description("Negative test for user getting")
+	@Description("Negative test for user getting when user is unauthorized")
 	public void checkUserGettingUnauthorized() {
 		//Request without authorization
 		Response getUser = given()
@@ -95,7 +95,7 @@ public class AuthUserTests {
 
 	@Test
 	@DisplayName("User editing")
-	@Description("Negative test for user editing")
+	@Description("Negative test for user editing when user is unauthorized")
 	public void checkUserEditingUnauthorized() {
 		//Request without authorization
 		String editRequestBody = "{ \"email\" : \"" + email + "\", \"password\":\"" + password + "\", \"name\":\"" + name + "\"}";
