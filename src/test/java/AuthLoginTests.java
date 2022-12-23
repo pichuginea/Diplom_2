@@ -8,11 +8,11 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import org.junit.*;
 
-import static org.apache.http.HttpStatus.*;
-
 import static io.restassured.RestAssured.given;
+import static org.apache.http.HttpStatus.*;
+import static org.hamcrest.Matchers.equalTo;
 
-public class RegisterUserTests {
+public class AuthLoginTests {
 
 	@BeforeClass
 	public static void log() {
@@ -22,7 +22,7 @@ public class RegisterUserTests {
 	private String email;
 	private String password;
 	private String name;
-	private String authToken = null;
+	private String authToken;
 
 
 	@Before
@@ -32,15 +32,15 @@ public class RegisterUserTests {
 		email = "CreateEmail" + System.currentTimeMillis() + "@yandex.ru";
 		password = "CreatePw" + System.currentTimeMillis();
 		name = "CreateName" + System.currentTimeMillis();
+
+		authToken = createUser(email, password, name).jsonPath().getString("accessToken");
 	}
 
 	@Test
-	@DisplayName("User creation")
-	@Description("Basic test for positive user creation")
-	public void checkUserCreation() {
-		Response response = createUser(email, password, name);
-
-		authToken = response.jsonPath().getString("accessToken");
+	@DisplayName("User login")
+	@Description("Basic test for positive user authentication")
+	public void checkUserAuthenticated() {
+		Response response = loginUser(email, password);
 
 		Assert.assertEquals(SC_OK, response.statusCode());
 		Assert.assertEquals("true", response.jsonPath().getString("success"));
@@ -51,29 +51,43 @@ public class RegisterUserTests {
 	}
 
 	@Test
-	@DisplayName("Can not create two the same users")
-	@Description("Negative test for two the same user creation")
-	public void checkCanNotCreateTwoTheSameUsers() {
-		Response firstUser = createUser(email, password, name);
-		Response secondUser = createUser(email, password, name);
+	@DisplayName("Login with incorrect email")
+	@Description("Error must be returned if try to login with incorrect email")
+	public void checkUserCanNotLoginWithIncorrectEmail() {
+		Response response = loginUser("email", password);
 
-		authToken = firstUser.jsonPath().getString("accessToken");
-
-		Assert.assertEquals(SC_OK, firstUser.statusCode());
-		Assert.assertEquals(SC_FORBIDDEN, secondUser.statusCode());
-		Assert.assertEquals("false", secondUser.jsonPath().getString("success"));
-		Assert.assertEquals("User already exists", secondUser.jsonPath().getString("message"));
+		response.then()
+				.assertThat().body("success", equalTo(false))
+				.assertThat().body("message", equalTo("email or password are incorrect"))
+				.and()
+				.statusCode(SC_UNAUTHORIZED);
 	}
 
 	@Test
-	@DisplayName("Create user without mandatory field")
-	@Description("User will not be created if the password is empty")
-	public void checkUserNotCreatedWithoutMandatoryField() {
-		Response response = createUser(email, "", name);
+	@DisplayName("Login with incorrect password")
+	@Description("Error must be returned if try to login with incorrect password")
+	public void checkUserCanNotLoginWithIncorrectPassword() {
+		Response response = loginUser(email, "password");
 
-		Assert.assertEquals(SC_FORBIDDEN, response.statusCode());
-		Assert.assertEquals("false", response.jsonPath().getString("success"));
-		Assert.assertEquals("Email, password and name are required fields", response.jsonPath().getString("message"));
+		response.then()
+				.assertThat().body("success", equalTo(false))
+				.assertThat().body("message", equalTo("email or password are incorrect"))
+				.and()
+				.statusCode(SC_UNAUTHORIZED);
+	}
+
+	@Step("Login user. Send POST request to /api/auth/login")
+	public Response loginUser(String email, String password) {
+		String loginRequestBody = "{ \"email\" : \"" + email + "\", \"password\":\"" + password + "\"}";
+
+		return given()
+				.contentType(ContentType.JSON)
+				.and()
+				.body(loginRequestBody)
+				.when()
+				.post("/api/auth/login")
+				.then()
+				.extract().response();
 	}
 
 	@Step("Create user. Send POST request to /api/auth/register")
@@ -93,14 +107,12 @@ public class RegisterUserTests {
 	@After
 	@Step("Delete courier. Send DELETE request to /api/auth/user")
 	public void deleteUser() {
-		if (authToken != null) {
-			given()
-					.contentType(ContentType.JSON)
-					.auth().oauth2(authToken.replace("Bearer ", ""))
-					.when()
-					.delete("/api/auth/user")
-					.then()
-					.assertThat().statusCode(SC_ACCEPTED);
-		}
+		given()
+				.contentType(ContentType.JSON)
+				.auth().oauth2(authToken.replace("Bearer ", ""))
+				.when()
+				.delete("/api/auth/user")
+				.then()
+				.assertThat().statusCode(SC_ACCEPTED);
 	}
 }
