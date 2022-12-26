@@ -4,20 +4,9 @@ import api.pojo.Orders;
 import io.qameta.allure.Step;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
-import java.util.ArrayList;
-import java.util.List;
 import static io.restassured.RestAssured.given;
 
 public class OrdersClient {
-
-	private List<String> ingredients = new ArrayList<>();
-
-	public OrdersClient(List<String> ingredients) {
-		this.ingredients = ingredients;
-	}
-
-	public OrdersClient() {
-	}
 
 	@Step("Get orders. Send GET request to /api/orders")
 	public ValidatableResponse getOrdersResponse(String accessToken) {

@@ -8,25 +8,6 @@ import static org.apache.http.HttpStatus.SC_ACCEPTED;
 
 public class UserClient {
 
-	private String email;
-	private String password;
-	private String name;
-
-	public UserClient(String email, String password, String name) {
-		this.email = email;
-		this.password = password;
-		this.name = name;
-	}
-
-	public UserClient(String email, String password) {
-		this.email = email;
-		this.password = password;
-	}
-
-	public UserClient() {
-
-	}
-
 	@Step("Get user. Send GET request to /api/auth/user")
 	public ValidatableResponse getUser(String accessToken) {
 		return given()
